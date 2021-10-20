@@ -14,6 +14,8 @@ repositories {
 }
 dependencies {
     implementation("net.dv8tion:JDA:4.3.0_277")
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    implementation("com.google.code.gson:gson:2.8.8")
 }
 
 test {
