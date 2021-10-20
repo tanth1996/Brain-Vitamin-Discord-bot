@@ -15,18 +15,17 @@ import java.util.*;
 import java.nio.file.Files;
 
 public class Bot extends ListenerAdapter {
-    private static String token;
-    private static HashMap<String, UserData> allUserData = new HashMap<>();
-    private static Type type = new TypeToken<HashMap<String, UserData>>() {}.getType();
-    private static File dataFile = new File("Data\\allUserData.json");
+    private static String token; // Token for Discord bot
+    private static HashMap<String, UserData> allUserData = new HashMap<>(); // HashMap of all user data
+    private static Type type = new TypeToken<HashMap<String, UserData>>() {}.getType(); // Used for JSON Serialisation
+    private static File dataFile = new File("Data\\allUserData.json"); // JSON file containing user data
 
     public static void main(String[] args) {
+        // Initialise JSON file or retrieve user data from it
         try {
             if (dataFile.exists() && !dataFile.isDirectory()) {
                 Reader reader = Files.newBufferedReader(dataFile.toPath());
                 allUserData = new Gson().fromJson(reader, type);
-
-//                MyClass object = new Gson().fromJson(new Gson().toJson(((LinkedTreeMap<String, Object>) theLinkedTreeMapObject)), MyClass .class);
                 reader.close();
             } else {
                 FileWriter writer = new FileWriter(dataFile);
@@ -38,18 +37,18 @@ public class Bot extends ListenerAdapter {
             e.printStackTrace();
         }
 
+        // Get credentials
         try {
             File myObj = new File("Credentials\\token.txt");
             Scanner myReader = new Scanner(myObj);
             token = myReader.nextLine();
             myReader.close();
         } catch (FileNotFoundException e) {
-            System.out.println("An error occurred.");
             e.printStackTrace();
         }
 
+        // Initialise the bot
         JDABuilder builder = JDABuilder.createDefault(token);
-
         JDA jda;
 
         try {
@@ -65,15 +64,12 @@ public class Bot extends ListenerAdapter {
                     .queue();
 
             // Testing with Guild commands
-            Guild guild = jda.getGuildById(900233285974761483l);
-            System.out.println(guild.getRoles());
-            guild.updateCommands()
-                    .queue();
+//            Guild guild = jda.getGuildById(900233285974761483l);
+//            System.out.println(guild.getRoles());
+//            guild.updateCommands()
+//                    .queue();
         }
-        catch(javax.security.auth.login.LoginException e) {
-            e.printStackTrace();
-        }
-        catch(InterruptedException e){
+        catch(Exception e) {
             e.printStackTrace();
         }
     }
@@ -83,6 +79,7 @@ public class Bot extends ListenerAdapter {
     {
         System.out.println("Event received: " + event.getName());
 
+        // Ping command
         if (event.getName().equals("ping")) {
             long time = System.currentTimeMillis();
             event.reply("Pong!").setEphemeral(true) // reply or acknowledge
@@ -91,16 +88,21 @@ public class Bot extends ListenerAdapter {
                     ).queue(); // Queue both reply and edit
         }
 
+        // Confused command
         if (event.getName().equals("confused")) {
             event.getChannel().sendTyping().queue();
+
             Member member = event.getOption("user").getAsMember();
             String name = member.getEffectiveName();
+            String memberId = member.getId();
+
             String reply = name + " hurt itself in its own confusion!";
             event.deferReply().queue();
 
-            String memberId = member.getId();
             long confused_n = 1;
+
             if (allUserData == null) allUserData = new HashMap<>();
+
             if (allUserData.containsKey(memberId)) {
                 HashMap<Object, Object> userData = allUserData.get(memberId).getData();
                 if (userData.containsKey("confused_n")) {
@@ -113,6 +115,8 @@ public class Bot extends ListenerAdapter {
                 userData.setData("confused_n", confused_n);
                 allUserData.put(memberId, userData);
             }
+
+            // Update the confusion count
             try {
                 FileWriter writer = new FileWriter(dataFile);
                 new Gson().toJson(allUserData, type, writer);
