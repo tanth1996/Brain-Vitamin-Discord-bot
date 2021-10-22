@@ -79,7 +79,7 @@ public class Bot extends ListenerAdapter {
             // Add the commands (bot commands can take up to 1 hour to propagate; use Guild commands for testing)
             jda.addEventListener(new Bot());
             jda.updateCommands()
-                    .addCommands(new CommandData("ping", "Ping the bot"))
+                    .addCommands(new CommandData("ping", "Ping the bot (does not work sometimes, fuck if I know why)"))
                     .addCommands(new CommandData("confused", "Confused a guy")
                             .addOption(OptionType.USER, "user", "The confused guy", true))
                     .addCommands(new CommandData("user_stats", "Check a user's stats")
@@ -143,12 +143,18 @@ public class Bot extends ListenerAdapter {
 
             // Check if user exists within allUserData
             if (allUserData.containsKey(memberId)) {
-                HashMap<Object, Object> userData = allUserData.get(memberId).getData();
-                if (userData.containsKey("confused_n")) {
-                    confused_n = ((Number) userData.get("confused_n")).longValue();
-                    userData.put("confused_n", ++confused_n);
+//                HashMap<Object, Object> userData = allUserData.get(memberId).getData();
+//                if (userData.containsKey("confused_n")) {
+//                    confused_n = ((Number) userData.get("confused_n")).longValue();
+//                    userData.put("confused_n", ++confused_n);
+//                }
+//                else userData.put("confused_n", confused_n);
+                UserData userData = allUserData.get(memberId);
+                if (userData.dataContainsKey("confused_n")) {
+                    confused_n = ((Number) userData.getData("confused_n")).longValue();
+                    userData.setData("confused_n", ++confused_n);
                 }
-                else userData.put("confused_n", confused_n);
+                else userData.setData("confused_n", confused_n);
             } else { // If user doesn't exist in allUserData yet, add the user and initialise the confusion count
                 UserData userData = new UserData(memberId, name, new HashMap<>());
                 userData.setData("confused_n", confused_n);
@@ -181,13 +187,8 @@ public class Bot extends ListenerAdapter {
             }
 
             if (allUserData.containsKey(memberId)) {
-                HashMap<Object, Object> userData = allUserData.get(memberId).getData();
-                StringBuilder replySb = new StringBuilder("Stats for " + name + "\n");
-                for (Map.Entry<Object,Object> entry : userData.entrySet()) {
-                    replySb.append("- " + entry.getKey() + ": " + entry.getValue() + "\n");
-                }
-                event.getHook().sendMessage(replySb.toString()).queue();
-                
+                UserData userData = allUserData.get(memberId);
+                event.getHook().sendMessage(userData.userStatsToString()).queue();
             } else {
                 event.getHook().sendMessage("No data for " + name + " has been recorded yet.").queue();
             }

@@ -24,8 +24,21 @@ public class UserData {
         return name;
     }
 
-    public HashMap<Object, Object> getData() {
+    /**
+     * Avoid use of this method where possible; other accessor methods to limit access to data should be implemented in
+     * the UserData class instead
+     * @return Hashmap representing the user's data
+     */
+    public HashMap<Object, Object> getDataObject() {
         return data;
+    }
+
+    public boolean dataContainsKey (Object key) {
+        return data.containsKey(key);
+    }
+
+    public Object getData (Object key) {
+        return data.get(key);
     }
 
     public void setId(String id) {
@@ -38,5 +51,13 @@ public class UserData {
 
     public void setData(Object key, Object value){
         data.put(key, value);
+    }
+
+    public String userStatsToString() {
+        StringBuilder sb = new StringBuilder("Stats for " + name + "\n");
+        for (Map.Entry<Object,Object> entry : data.entrySet()) {
+            sb.append("- " + entry.getKey() + ": " + entry.getValue() + "\n");
+        }
+        return sb.toString();
     }
 }
