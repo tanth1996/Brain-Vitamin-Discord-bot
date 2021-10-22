@@ -3,7 +3,6 @@ import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
@@ -11,7 +10,6 @@ import com.google.gson.*;
 
 import java.io.*;
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.nio.file.Files;
 
@@ -20,7 +18,6 @@ import java.nio.file.Files;
  */
 
 public class Bot extends ListenerAdapter {
-    private static String token; // Token for Discord bot
     private static HashMap<String, UserData> allUserData = new HashMap<>(); // HashMap of all user data
     private static Type type = new TypeToken<HashMap<String, UserData>>() {}.getType(); // Used for JSON Serialisation
     private static File dataFile = new File("Data\\allUserData.json"); // JSON file containing user data
@@ -30,35 +27,42 @@ public class Bot extends ListenerAdapter {
      * Simple utility function to write an object to file using GSON
      */
     private static void writeDataToFile(Object data, Type type, File file) throws IOException {
-
-        FileWriter writer = new FileWriter(file);
-        new Gson().toJson(data, type, writer);
-        writer.flush();
-        writer.close();
+        try (FileWriter writer = new FileWriter(file)) {
+            new Gson().toJson(data, type, writer);
+            writer.flush();
+        }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args){
         // Initialise JSON file or retrieve user data from it
-        try {
-            if (dataFile.exists() && !dataFile.isDirectory()) {
-                Reader reader = Files.newBufferedReader(dataFile.toPath());
+        if (dataFile.exists() && !dataFile.isDirectory()) {
+            try (Reader reader = Files.newBufferedReader(dataFile.toPath())) {
                 allUserData = new Gson().fromJson(reader, type);
-                reader.close();
-            } else {
-                writeDataToFile(allUserData, type, dataFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("An IO error occurred when reading the data file");
+                return;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else {
+            try {
+                writeDataToFile(allUserData, type, dataFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("An IO error occurred when writing to the data file");
+                return;
+            }
         }
 
         // Get credentials
-        try {
-            File myObj = new File("Credentials\\token.txt");
-            Scanner myReader = new Scanner(myObj);
+        File creds = new File("Credentials\\token.txt");
+        // Token for Discord bot
+        String token;
+        try (Scanner myReader = new Scanner(creds)) {
             token = myReader.nextLine();
-            myReader.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            System.out.println("No credentials file found, ensure that a token.txt file exists within a \"Credentials\" subdirectory");
+            return;
         }
 
         // Initialise the bot
@@ -137,20 +141,21 @@ public class Bot extends ListenerAdapter {
 
             if (allUserData == null) allUserData = new HashMap<>();
 
+            // Check if user exists within allUserData
             if (allUserData.containsKey(memberId)) {
                 HashMap<Object, Object> userData = allUserData.get(memberId).getData();
                 if (userData.containsKey("confused_n")) {
-                    confused_n = ((Number)userData.get("confused_n")).longValue();
+                    confused_n = ((Number) userData.get("confused_n")).longValue();
                     userData.put("confused_n", ++confused_n);
                 }
                 else userData.put("confused_n", confused_n);
-            } else {
+            } else { // If user doesn't exist in allUserData yet, add the user and initialise the confusion count
                 UserData userData = new UserData(memberId, name, new HashMap<>());
                 userData.setData("confused_n", confused_n);
                 allUserData.put(memberId, userData);
             }
 
-            // Update the confusion count
+            // Write the update to file
             try {
                 writeDataToFile(allUserData, type, dataFile);
 
@@ -178,7 +183,7 @@ public class Bot extends ListenerAdapter {
             if (allUserData.containsKey(memberId)) {
                 HashMap<Object, Object> userData = allUserData.get(memberId).getData();
                 StringBuilder replySb = new StringBuilder("Stats for " + name + "\n");
-                for (Map.Entry entry : userData.entrySet()) {
+                for (Map.Entry<Object,Object> entry : userData.entrySet()) {
                     replySb.append("- " + entry.getKey() + ": " + entry.getValue() + "\n");
                 }
                 event.getHook().sendMessage(replySb.toString()).queue();
