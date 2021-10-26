@@ -2,7 +2,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UserData {
-    private String id; // this should also be the Key for the HashMap
+    private String id; // this should also be the Key for the allUserData HashMap
     private String name;
     private HashMap<Object, Object> data;
 

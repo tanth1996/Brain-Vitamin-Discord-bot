@@ -1,42 +1,35 @@
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import net.dv8tion.jda.api.*;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-
-import com.google.gson.*;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 
 import java.io.*;
 import java.lang.reflect.Type;
-import java.util.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Scanner;
 
 /** Bot invite link:
  * https://discord.com/api/oauth2/authorize?client_id=900233708290854972&permissions=2415929344&scope=bot%20applications.commands
  */
 
-public class Bot extends ListenerAdapter {
-    private static HashMap<String, UserData> allUserData = new HashMap<>(); // HashMap of all user data
-    private static Type type = new TypeToken<HashMap<String, UserData>>() {}.getType(); // Used for JSON Serialisation
-    private static File dataFile = new File("Data\\allUserData.json"); // JSON file containing user data
-    private static User selfUser;
+public class Bot {
+    private HashMap<String, UserData> allUserData = new HashMap<>(); // HashMap of all user data
+    public final Type type = new TypeToken<HashMap<String, UserData>>() {}.getType(); // Used for JSON Serialisation
+    public final Path dataFile = Paths.get("Data\\allUserData.json"); // JSON file containing user data
+    public User selfUser;
+    private JDA jda = null;
 
-    /**
-     * Simple utility function to write an object to file using GSON
-     */
-    private static void writeDataToFile(Object data, Type type, File file) throws IOException {
-        try (FileWriter writer = new FileWriter(file)) {
-            new Gson().toJson(data, type, writer);
-            writer.flush();
-        }
-    }
-
-    public static void main(String[] args){
+    public void initialise() {
         // Initialise JSON file or retrieve user data from it
-        if (dataFile.exists() && !dataFile.isDirectory()) {
-            try (Reader reader = Files.newBufferedReader(dataFile.toPath())) {
+        if (Files.isRegularFile(dataFile)) {
+            try (Reader reader = Files.newBufferedReader(dataFile)) {
                 allUserData = new Gson().fromJson(reader, type);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -55,7 +48,6 @@ public class Bot extends ListenerAdapter {
 
         // Get credentials
         File creds = new File("Credentials\\token.txt");
-        // Token for Discord bot
         String token;
         try (Scanner myReader = new Scanner(creds)) {
             token = myReader.nextLine();
@@ -67,131 +59,48 @@ public class Bot extends ListenerAdapter {
 
         // Initialise the bot
         JDABuilder builder = JDABuilder.createDefault(token);
-        JDA jda;
-
         try {
             builder.setActivity(Activity.playing("Type /confused"));
             jda = builder.build();
             jda.awaitReady();
 
             selfUser = jda.getSelfUser();
-
-            // Add the commands (bot commands can take up to 1 hour to propagate; use Guild commands for testing)
-            jda.addEventListener(new Bot());
-            jda.updateCommands()
-                    .addCommands(new CommandData("ping", "Ping the bot (does not work sometimes, fuck if I know why)"))
-                    .addCommands(new CommandData("confused", "Confused a guy")
-                            .addOption(OptionType.USER, "user", "The confused guy", true))
-                    .addCommands(new CommandData("user_stats", "Check a user's stats")
-                            .addOption(OptionType.USER, "user", "The user's stats you want to check", true))
-                    .queue();
-
-//            // Testing with Guild commands
-//            Guild guild = jda.getGuildById(900233285974761483l);
-//            System.out.println(guild.getRoles());
-//
-//            guild.updateCommands()
-//                    .queue(); // Reset guild commands to empty
-//
-////            guild.updateCommands().addCommands(new CommandData("user_stats", "Check a user's stats (guild cmd)")
-////                            .addOption(OptionType.USER, "user", "The user's stats you want to check", true))
-////                    .queue();
         }
         catch(Exception e) {
             e.printStackTrace();
         }
     }
 
-    @Override
-    public void onSlashCommand(SlashCommandEvent event)
-    {
-        System.out.println("Event received: " + event.getName());
-
-        /* TODO: Known issue - only this command i.e. "ping" produces "Invalid interaction application command" in
-            Discord with no error thrown in console
-         */
-        // ping command
-        if (event.getName().equals("ping")) {
-            long time = System.currentTimeMillis();
-            event.reply("Pong!").setEphemeral(true) // reply or acknowledge
-                    .flatMap(v ->
-                            event.getHook().editOriginalFormat("Pong: %d ms", System.currentTimeMillis() - time) // then edit original
-                    ).queue(); // Queue both reply and edit
+    public void addCommands(CommandContainer cmds) {
+        // Add the commands (bot commands can take up to 1 hour to propagate; use Guild commands for testing)
+        jda.addEventListener(cmds);
+        CommandListUpdateAction cmdAction = jda.updateCommands();
+        for (CommandData cmd : cmds.cmdList) {
+            cmdAction.addCommands(cmd);
         }
+        cmdAction.queue();
+    }
 
-        // confused command
-        if (event.getName().equals("confused")) {
-            event.deferReply().queue();
-            event.getChannel().sendTyping().queue();
+    public HashMap<String, UserData> getAllUserData() {
+        return allUserData;
+    }
 
-            Member member = event.getOption("user").getAsMember();
-            String name = member.getEffectiveName();
-            String memberId = member.getId();
-
-            if (memberId.equals(selfUser.getId())) {
-                // TODO: Figure out why UTF encoding cannot be sent eg. "( •_•)"
-                String reply = selfUser.getName() + " cannot be confused ( ._.)";
-
-                event.getHook().sendMessage(reply).queue();
-                return;
-            }
-
-            String reply = name + " hurt itself in its own confusion!";
-            long confused_n = 1;
-
-            if (allUserData == null) allUserData = new HashMap<>();
-
-            // Check if user exists within allUserData
-            if (allUserData.containsKey(memberId)) {
-//                HashMap<Object, Object> userData = allUserData.get(memberId).getData();
-//                if (userData.containsKey("confused_n")) {
-//                    confused_n = ((Number) userData.get("confused_n")).longValue();
-//                    userData.put("confused_n", ++confused_n);
-//                }
-//                else userData.put("confused_n", confused_n);
-                UserData userData = allUserData.get(memberId);
-                if (userData.dataContainsKey("confused_n")) {
-                    confused_n = ((Number) userData.getData("confused_n")).longValue();
-                    userData.setData("confused_n", ++confused_n);
-                }
-                else userData.setData("confused_n", confused_n);
-            } else { // If user doesn't exist in allUserData yet, add the user and initialise the confusion count
-                UserData userData = new UserData(memberId, name, new HashMap<>());
-                userData.setData("confused_n", confused_n);
-                allUserData.put(memberId, userData);
-            }
-
-            // Write the update to file
-            try {
-                writeDataToFile(allUserData, type, dataFile);
-
-                event.getHook().sendMessage(reply).queue();
-                event.getChannel().sendMessage(confused_n + " times!").queue();
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
+    // TODO: Implement SQLite database instead of JSON file for data storage
+    /**
+     * Simple utility function to write an object to file using GSON
+     */
+    public void writeDataToFile(Object data, Type type, Path path) throws IOException {
+        try (Writer writer = Files.newBufferedWriter(path)) {
+            new Gson().toJson(data, type, writer);
+            writer.flush();
         }
+    }
 
-        // userStats command
-        if (event.getName().equals("user_stats")) {
-            event.deferReply().queue();
-            event.getChannel().sendTyping().queue();
+    public static void main(String[] args){
+        Bot bot = new Bot();
+        bot.initialise();
 
-            Member member = event.getOption("user").getAsMember();
-            String name = member.getEffectiveName();
-            String memberId = member.getId();
-
-            if (allUserData == null) {
-                event.getHook().sendMessage("Something has went wrong - no user data has been detected").queue();
-                return;
-            }
-
-            if (allUserData.containsKey(memberId)) {
-                UserData userData = allUserData.get(memberId);
-                event.getHook().sendMessage(userData.userStatsToString()).queue();
-            } else {
-                event.getHook().sendMessage("No data for " + name + " has been recorded yet.").queue();
-            }
-        }
+        CommandContainer cmdContainer = new CommandContainer(bot);
+        bot.addCommands(cmdContainer);
     }
 }
