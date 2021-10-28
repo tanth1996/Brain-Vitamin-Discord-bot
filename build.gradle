@@ -29,7 +29,7 @@ test {
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes("Main-Class": "Bot")
+        attributes("Main-Class": "brainvitamin.Bot")
     }
 
     from {

@@ -3,6 +3,7 @@ package brainvitamin;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
@@ -20,9 +21,6 @@ import java.util.Scanner;
  */
 
 public class Bot {
-//    private HashMap<String, UserData> allUserData = new HashMap<>(); // HashMap of all user data
-//    public final Type type = new TypeToken<HashMap<String, UserData>>() {}.getType(); // Used for JSON Serialisation
-//    public final Path dataFile = Paths.get("Data\\allUserData.json"); // JSON file containing user data
     private final String connUrl = "jdbc:sqlite:data\\allUserData.db"; // URL for DB connection
     public User selfUser;
     private JDA jda = null;
@@ -32,25 +30,6 @@ public class Bot {
     }
 
     public void initialise() {
-//        // Initialise JSON file or retrieve user data from it
-//        if (Files.isRegularFile(dataFile)) {
-//            try (Reader reader = Files.newBufferedReader(dataFile)) {
-//                allUserData = new Gson().fromJson(reader, type);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                System.out.println("An IO error occurred when reading the data file");
-//                return;
-//            }
-//        } else {
-//            try {
-//                writeDataToFile(allUserData, type, dataFile);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                System.out.println("An IO error occurred when writing to the data file");
-//                return;
-//            }
-//        }
-
         // Get credentials
         File creds = new File("Credentials\\token.txt");
         String token;
@@ -95,21 +74,21 @@ public class Bot {
         }
     }
 
-//    /**
-//     * Simple utility function to write an object to file using GSON
-//     */
-//    public void writeDataToFile(Object data, Type type, Path path) throws IOException {
-//        try (Writer writer = Files.newBufferedWriter(path)) {
-//            new Gson().toJson(data, type, writer);
-//            writer.flush();
-//        }
-//    }
-
     public static void main(String[] args){
         Bot bot = new Bot();
         bot.initialise();
 
         CommandContainer cmdContainer = new CommandContainer(bot);
         bot.addCommands(cmdContainer);
+
+//        // Testing with Guild commands
+//        Guild guild = bot.jda.getGuildById(900233285974761483l);
+//
+//        guild.updateCommands()
+//                .queue(); // Reset guild commands to empty
+//
+//        guild.updateCommands()
+//                .addCommands(new CommandData("leaderboard", "Display the leaderboard of confusion (guild cmd)"))
+//                .queue();
     }
 }

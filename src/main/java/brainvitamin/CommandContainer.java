@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class CommandContainer extends ListenerAdapter {
@@ -30,18 +29,7 @@ public class CommandContainer extends ListenerAdapter {
                 .addOption(OptionType.USER, "user", "The confused guy", true));
         cmdList.add(new CommandData("user_stats", "Check a user's stats")
                 .addOption(OptionType.USER, "user", "The user's stats you want to check", true));
-//        cmdList.add(new CommandData("leaderboard", "Display the leaderboard of confusion"));
-
-//            // Testing with Guild commands
-//            Guild guild = jda.getGuildById(900233285974761483l);
-//            System.out.println(guild.getRoles());
-//
-//            guild.updateCommands()
-//                    .queue(); // Reset guild commands to empty
-//
-////            guild.updateCommands().addCommands(new CommandData("user_stats", "Check a user's stats (guild cmd)")
-////                            .addOption(OptionType.USER, "user", "The user's stats you want to check", true))
-////                    .queue();
+        cmdList.add(new CommandData("leaderboard", "Display the leaderboard of confusion"));
     }
 
     @Override
@@ -97,6 +85,7 @@ public class CommandContainer extends ListenerAdapter {
                 }
                 String reply = name + " hurt itself in its own confusion! \n" + times_confused + " times!";
                 event.getHook().sendMessage(reply).queue();
+                return;
             } catch (DuplicatedIdException e){
                 String reply = "Error: More than one of this ID exists as an entry. If this gets printed, I fucked up.";
                 event.getHook().sendMessage(reply).queue();
@@ -107,32 +96,6 @@ public class CommandContainer extends ListenerAdapter {
                 e.printStackTrace();
                 return;
             }
-
-//            if (allUserData == null) allUserData = new HashMap<>();
-//
-//            // Check if user exists within allUserData
-//            if (allUserData.containsKey(memberId)) {
-//                UserData userData = allUserData.get(memberId);
-//                if (userData.dataContainsKey("confused_n")) {
-//                    confused_n = ((Number) userData.getData("confused_n")).longValue();
-//                    userData.setData("confused_n", ++confused_n);
-//                }
-//                else userData.setData("confused_n", confused_n);
-//            } else { // If user doesn't exist in allUserData yet, add the user and initialise the confusion count
-//                UserData userData = new UserData(memberId, name, new HashMap<>());
-//                userData.setData("confused_n", confused_n);
-//                allUserData.put(memberId, userData);
-//            }
-//
-//            // Write the update to file and send the message
-//            try {
-//                bot.writeDataToFile(allUserData, bot.type, bot.dataFile);
-//
-//                String reply = name + " hurt itself in its own confusion! \n" + confused_n + " times!";
-//                event.getHook().sendMessage(reply).queue();
-//            } catch(Exception e) {
-//                e.printStackTrace();
-//            }
         }
 
         // userStats command
@@ -159,7 +122,7 @@ public class CommandContainer extends ListenerAdapter {
                 StringBuilder replySb = new StringBuilder("Stats for " + name + "\n");
                 replySb.append(getUserStatsAsString(rs));
                 event.getHook().sendMessage(replySb.toString()).queue();
-
+                return;
             } catch (DuplicatedIdException e){
                 String reply = "Error: More than one of this ID exists as an entry. If this gets printed, I fucked up.";
                 event.getHook().sendMessage(reply).queue();
@@ -170,21 +133,29 @@ public class CommandContainer extends ListenerAdapter {
                 e.printStackTrace();
                 return;
             }
+        }
 
-//            if (allUserData == null) {
-//                event.getHook().sendMessage("Something has went wrong - no user data has been detected").queue();
-//                return;
-//            }
-//
-//            if (allUserData.containsKey(memberId)) {
-//                UserData userData = allUserData.get(memberId);
-//                if (userData.getName() != name) {
-//                    userData.setName(name);
-//                }
-//                event.getHook().sendMessage(userData.userStatsToString()).queue();
-//            } else {
-//                event.getHook().sendMessage("No data for " + name + " has been recorded yet.").queue();
-//            }
+        // leaderboard command
+        if (event.getName().equals("leaderboard")) {
+            event.deferReply().queue();
+            event.getChannel().sendTyping().queue();
+
+            try (Connection conn = DriverManager.getConnection(bot.getConnUrl())) {
+                ResultSet rs = getData(conn, "SELECT NAME, TIMES_CONFUSED FROM USERS" +
+                        " ORDER BY TIMES_CONFUSED DESC" +
+                        " LIMIT 10");
+                StringBuilder replySb = new StringBuilder("__**The Leaderboard of Confusion**__\n");
+                while (rs.next()) {
+                    String name = rs.getString("NAME");
+                    String times_confused = rs.getString("TIMES_CONFUSED");
+                    replySb.append(String.format("%-32s  ->  %s times %n", name, times_confused));
+                }
+                event.getHook().sendMessage(replySb.toString()).queue();
+            } catch(SQLException e) {
+                System.out.println("SQLException: " + e.getMessage());
+                e.printStackTrace();
+                return;
+            }
         }
     }
 
