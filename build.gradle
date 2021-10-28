@@ -16,6 +16,10 @@ dependencies {
     implementation("net.dv8tion:JDA:4.3.0_277")
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
     implementation("com.google.code.gson:gson:2.8.8")
+
+    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+    implementation 'org.xerial:sqlite-jdbc:3.36.0.3'
+
 }
 
 test {

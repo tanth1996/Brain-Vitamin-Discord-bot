@@ -44,6 +44,9 @@ Credentials/*
 # Output files
 out
 
+# Once-off helper classes
+DatabasePorter.java
+
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
 
