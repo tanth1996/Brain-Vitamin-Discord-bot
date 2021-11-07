@@ -17,6 +17,10 @@ public class CommandContainer extends ListenerAdapter {
     private User selfUser;
     private ResultSet allUserData;
 
+    public CommandContainer() {
+        // Blank constructor for extension
+    }
+
     public CommandContainer(Bot bot) {
         // Get required fields from bot
         this.bot = bot;
@@ -77,6 +81,7 @@ public class CommandContainer extends ListenerAdapter {
                     times_confused = rs.getLong("TIMES_CONFUSED") + 1;
                     updateData(conn, "UPDATE USERS " +
                             "SET TIMES_CONFUSED = " + times_confused +
+                            ", NAME = \"" + name + "\"" +
                             " WHERE ID = " + memberId);
                 } else { // Insert new user
                     updateData(conn, String.format("INSERT INTO USERS " +

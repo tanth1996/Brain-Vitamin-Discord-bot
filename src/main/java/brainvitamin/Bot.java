@@ -58,11 +58,12 @@ public class Bot {
     public void addCommands(CommandContainer cmds) {
         // Add the commands (bot commands can take up to 1 hour to propagate; use Guild commands for testing)
         jda.addEventListener(cmds);
-        CommandListUpdateAction cmdAction = jda.updateCommands();
+//        CommandListUpdateAction cmdAction = jda.updateCommands();
         for (CommandData cmd : cmds.cmdList) {
-            cmdAction.addCommands(cmd);
+//            cmdAction.addCommands(cmd);
+            jda.upsertCommand(cmd).queue();
         }
-        cmdAction.queue();
+//        cmdAction.queue();
     }
 
     public ResultSet getAllUserData() {
@@ -80,6 +81,8 @@ public class Bot {
 
         CommandContainer cmdContainer = new CommandContainer(bot);
         bot.addCommands(cmdContainer);
+        AudioCommandContainer audioCmdContainer = new AudioCommandContainer();
+        bot.addCommands(audioCmdContainer);
 
 //        // Testing with Guild commands
 //        Guild guild = bot.jda.getGuildById(900233285974761483l);

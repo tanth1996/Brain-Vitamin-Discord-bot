@@ -24,27 +24,18 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes>
-      <connection connection-id="5539ef7a-e476-435d-8379-319933ca7861">
-        <schema name="main" object-types="table, view" />
-      </connection>
-      <connection connection-id="61b79515-f6fc-4866-a7db-050751237805">
-        <schema name="main" object-types="table, view" />
-      </connection>
-    </loaded-nodes>
+    <loaded-nodes />
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="5539ef7a-e476-435d-8379-319933ca7861">
       <console name="Connection" type="STANDARD" schema="main" session="Main"><![CDATA[SELECT * FROM USERS]]></console>
     </connection>
     <connection id="61b79515-f6fc-4866-a7db-050751237805">
-      <console name="Main Connection" type="STANDARD" schema="main" session="Main"><![CDATA[select * from users]]></console>
+      <console name="Main Connection" type="STANDARD" schema="main" session="Main"><![CDATA[SELECT * FROM USERS]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="61b79515-f6fc-4866-a7db-050751237805" object-ref="consoles/Main Connection" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="5539ef7a-e476-435d-8379-319933ca7861" />
