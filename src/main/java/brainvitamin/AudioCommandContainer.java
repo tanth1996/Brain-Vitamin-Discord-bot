@@ -37,58 +37,64 @@ public class AudioCommandContainer extends CommandContainer {
 
     @Override
     public void onSlashCommand(SlashCommandEvent event) {
-        if (event.getName().equals("play_audio")) {
-            System.out.println("play_audio: This command is under development");
+        try {
+            if (event.getName().equals("play_audio")) {
+                System.out.println("play_audio: This command is under development");
 
-            // Get target channel and ensure it is a VoiceChannel
-            GuildChannel channel = event.getOption("channel").getAsGuildChannel();
-            if (channel.getType() != ChannelType.VOICE) {
-                event.reply("Specified channel is not a voice channel; please select a voice channel").setEphemeral(true).queue();
-                return;
-            }
-            VoiceChannel voiceChannel = (VoiceChannel) channel;
-
-            // Defer reply
-            event.deferReply(true).queue();
-
-            // TODO: Audio stream gets sped up when this command is called on more than one server (siphoning)
-            event.getGuild().getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
-
-            String source = event.getOption("source").getAsString();
-
-            System.out.format("source: %s %nchannel: %s", source, voiceChannel.getName());
-
-            playerManager.loadItem(source, new AudioLoadResultHandler() {
-                @Override
-                public void trackLoaded(AudioTrack track) {
-                    event.getHook().sendMessage("Adding to queue " + track.getInfo().title).queue();
-
-                    play(track, voiceChannel, channel.getGuild());
+                // Get target channel and ensure it is a VoiceChannel
+                GuildChannel channel = event.getOption("channel").getAsGuildChannel();
+                if (channel.getType() != ChannelType.VOICE) {
+                    event.reply("Specified channel is not a voice channel; please select a voice channel").setEphemeral(true).queue();
+                    return;
                 }
+                VoiceChannel voiceChannel = (VoiceChannel) channel;
 
-                @Override
-                public void playlistLoaded(AudioPlaylist playlist) {
-                    AudioTrack firstTrack = playlist.getSelectedTrack();
+                // Defer reply
+                event.deferReply(true).queue();
 
-                    if (firstTrack == null) {
-                        firstTrack = playlist.getTracks().get(0);
+                /* TODO: Audio stream gets sped up when this command is called on more than one server (siphoning);
+                    try creating separate AudioPlayer instance for each guild */
+                event.getGuild().getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
+
+                String source = event.getOption("source").getAsString();
+
+                System.out.format("source: %s %nchannel: %s%n", source, voiceChannel.getName());
+
+                playerManager.loadItem(source, new AudioLoadResultHandler() {
+                    @Override
+                    public void trackLoaded(AudioTrack track) {
+                        event.getHook().sendMessage("Adding to queue " + track.getInfo().title).queue();
+
+                        play(track, voiceChannel, channel.getGuild());
                     }
 
-                    event.getHook().sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + playlist.getName() + ")").queue();
+                    @Override
+                    public void playlistLoaded(AudioPlaylist playlist) {
+                        AudioTrack firstTrack = playlist.getSelectedTrack();
 
-                    play(firstTrack, voiceChannel, channel.getGuild());
-                }
+                        if (firstTrack == null) {
+                            firstTrack = playlist.getTracks().get(0);
+                        }
 
-                @Override
-                public void noMatches() {
-                    event.getHook().sendMessage("Nothing found by " + source).queue();
-                }
+                        event.getHook().sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + playlist.getName() + ")").queue();
 
-                @Override
-                public void loadFailed(FriendlyException exception) {
-                    event.getHook().sendMessage("Could not play: " + exception.getMessage()).queue();
-                }
-            });
+                        play(firstTrack, voiceChannel, channel.getGuild());
+                    }
+
+                    @Override
+                    public void noMatches() {
+                        event.getHook().sendMessage("Nothing found by " + source).queue();
+                    }
+
+                    @Override
+                    public void loadFailed(FriendlyException exception) {
+                        event.getHook().sendMessage("Could not play: " + exception.getMessage()).queue();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            System.out.println("Exception thrown by play_audio command");
+            e.printStackTrace();
         }
     }
 
