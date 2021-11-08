@@ -86,7 +86,7 @@ public class CommandContainer extends ListenerAdapter {
                 } else { // Insert new user
                     updateData(conn, String.format("INSERT INTO USERS " +
                             "(ID, NAME, TIMES_CONFUSED) " +
-                            " VALUES (%d, \"%s\", %d)", memberId, name, times_confused));
+                            " VALUES (%s, \"%s\", %d)", memberId, name, times_confused));
                 }
                 String reply = name + " hurt itself in its own confusion! \n" + times_confused + " times!";
                 event.getHook().sendMessage(reply).queue();

@@ -42,7 +42,6 @@ public class AudioCommandContainer extends CommandContainer {
 
             // Get target channel and ensure it is a VoiceChannel
             GuildChannel channel = event.getOption("channel").getAsGuildChannel();
-            System.out.println(channel.getType());
             if (channel.getType() != ChannelType.VOICE) {
                 event.reply("Specified channel is not a voice channel; please select a voice channel").setEphemeral(true).queue();
                 return;
@@ -50,12 +49,14 @@ public class AudioCommandContainer extends CommandContainer {
             VoiceChannel voiceChannel = (VoiceChannel) channel;
 
             // Defer reply
-            event.deferReply().queue();
+            event.deferReply(true).queue();
 
             // TODO: Audio stream gets sped up when this command is called on more than one server (siphoning)
             event.getGuild().getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
 
             String source = event.getOption("source").getAsString();
+
+            System.out.format("source: %s %nchannel: %s", source, voiceChannel.getName());
 
             playerManager.loadItem(source, new AudioLoadResultHandler() {
                 @Override
